@@ -245,6 +245,20 @@ trait PHPJasperXML_output
         $height = $this->bands[$bandname]['height'];
         if($height>0)
         {
+
+            if ($bandname == 'pageFooter') {
+                foreach ($this->variables as $varname => $varsetting) {
+                    if ($varsetting['resetType'] === 'Page') {
+                        if ($varsetting['datatype'] == 'string') {
+                            $this->variables[$varname]['value'] = '--value reset--';
+                        } else {
+                            //  $this->variables[$varname]['value'] = null;
+                        }
+
+                        $this->variables[$varname]['lastresetvalue'] = '--lastvalue reset--';
+                    }
+                }
+            }
          
            foreach($this->elements[$bandname] as $uuid =>$element)
             {
