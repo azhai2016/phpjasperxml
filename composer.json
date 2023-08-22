@@ -1,5 +1,5 @@
 {
-    "name": "simitsdk/phpjasperxml",
+    "name": "azhai2023/phpjasperxml",
     "description": "PHP PDF renderer of open source jasper report studio.",
     "require": {
         "php": ">=7.4",
