@@ -2,6 +2,8 @@
 
 namespace simitsdk\phpjasperxml;
 
+use \Simitsdk\phpjasperxml\Tools\AmountUtils;
+
 trait PHPJasperXML_output
 {                    
     protected array $pageproperties=[];
