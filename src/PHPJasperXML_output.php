@@ -246,18 +246,31 @@ trait PHPJasperXML_output
         if($height>0)
         {
 
-            if ($bandname == 'pageFooter') {
+            
+            if ($bandname == 'pageFooter' || $bandname == 'lastPageFooter' ) {
+         
                 foreach ($this->variables as $varname => $varsetting) {
+                   
                     if ($varsetting['resetType'] === 'Page') {
                         if ($varsetting['datatype'] == 'string') {
                             $this->variables[$varname]['value'] = '--value reset--';
                         } else {
                             //  $this->variables[$varname]['value'] = null;
                         }
-
                         $this->variables[$varname]['lastresetvalue'] = '--lastvalue reset--';
+
+                        if ('total'===$varname) {
+                           $computevalue = $this->variables[$varname]['value'];
+                           $chiness_amount_string= AmountUtils::convertToChinese($computevalue);
+                           $currencySymbol = ' '; 
+                           $formattedAmount = $currencySymbol . number_format($computevalue, 2, '.', ',');
+                           $this->variables[$varname]['lastvalue'] = $chiness_amount_string.$formattedAmount;//sprintf('人民币:%s %s',[$chiness_amount_string,$formattedAmount]);
+                        }
+               
                     }
+              
                 }
+              
             }
          
            foreach($this->elements[$bandname] as $uuid =>$element)
