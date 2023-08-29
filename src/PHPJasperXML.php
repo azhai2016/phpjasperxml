@@ -13,6 +13,7 @@ class PHPJasperXML{
     use PHPJasperXML_subreport;
     protected array $defaultbands=['background', 'title', 'pageHeader', 'columnHeader', 'detail', 'columnFooter', 'pageFooter', 'lastPageFooter', 'summary', 'noData', ];
     protected array $bands=[];
+    protected array $page_status = [];
     
     public function __construct()
     {
