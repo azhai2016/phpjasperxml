@@ -4,6 +4,8 @@ namespace simitsdk\phpjasperxml;
 
 use Throwable;
 
+use \Simitsdk\phpjasperxml\Tools\AmountUtils;
+
 trait PHPJasperXML_variables
 {
 
@@ -13,77 +15,66 @@ trait PHPJasperXML_variables
      */
     protected function computeVariables(int $rowno)
     {
-        
-        foreach($this->variables as $varname=>$setting)
-        {            
-            $setting['calculation']=$setting['calculation']??'None';
-            $setting['incrementType']=$setting['incrementType']??'';
-            $setting['initialValueExpression']=$setting['initialValueExpression']??'';
-            $setting['variableExpression']=$setting['variableExpression']??'';
-            $setting['incrementType']=$setting['incrementType']??'';
-            $setting['incrementGroup']=$setting['incrementGroup']??'';
-            $setting['resetType']=$setting['resetType']??'None';
-            $setting['resetGroup']=$setting['resetGroup']??'';                
-            $resettype = $setting['resetType'];            
+
+
+
+        foreach ($this->variables as $varname => $setting) {
+            $setting['calculation'] = $setting['calculation'] ?? 'None';
+            $setting['incrementType'] = $setting['incrementType'] ?? '';
+            $setting['initialValueExpression'] = $setting['initialValueExpression'] ?? '';
+            $setting['variableExpression'] = $setting['variableExpression'] ?? '';
+            $setting['incrementType'] = $setting['incrementType'] ?? '';
+            $setting['incrementGroup'] = $setting['incrementGroup'] ?? '';
+            $setting['resetType'] = $setting['resetType'] ?? 'None';
+            $setting['resetGroup'] = $setting['resetGroup'] ?? '';
+            $resettype = $setting['resetType'];
             $resetGroup = $setting['resetGroup'];
             $initialValueExpression = $setting['initialValueExpression'];
             $isreset = false;
 
+            $resetvalue = '';
 
-
-            if(isset($this->variables[$varname]['lastresetvalue']))
-            {
-                $lastresetvalue=$this->variables[$varname]['lastresetvalue'];
-                $resetvalue = $this->getResetValue($varname, $resettype,$resetGroup,$initialValueExpression);                
+            if (isset($this->variables[$varname]['lastresetvalue'])) {
+                $lastresetvalue = $this->variables[$varname]['lastresetvalue'];
+                $resetvalue = $this->getResetValue($varname, $resettype, $resetGroup, $initialValueExpression);
                 // echo "\ncompare reset value $lastresetvalue === $resetvalue \n";
-                if($lastresetvalue != $resetvalue)
-                {
+                if ($lastresetvalue != $resetvalue) {
                     $isreset = true;
-    
-                    $this->variables[$varname]['lastresetvalue']=$resetvalue;
+                    $this->variables[$varname]['lastresetvalue'] = $resetvalue;
                 }
-    
             }
-            
-            
+
             $calculation = $setting['calculation'];
-            if(!empty($calculation))
-            {
-                if(in_array($calculation,['StandardDeviation','Variance','DistinctCount','Count']))
-                {
+            if (!empty($calculation)) {
+                if (in_array($calculation, ['StandardDeviation', 'Variance', 'DistinctCount', 'Count'])) {
                     die("variable $varname using calculation method $calculation which is not supported.");
                 }
-                $computeMethodName = 'compute_'.$calculation;
-            }
-            else
-            {
+                $computeMethodName = 'compute_' . $calculation;
+            } else {
                 $computeMethodName = 'compute_None';
             }
             // echo "\n var name = $varname $computeMethodName\n";
             // print_r($setting);
-            if(!method_exists($this,$computeMethodName))
-            {
-                $msg = sprintf("Variable '%s' use calculation type '%s' which is not supported, '%s()' not found",$varname,$calculation,$computeMethodName);
-                if($this->debugtxt) echo "\n".$msg."\n";
-            }
-            else
-            {
-                $computevalue = call_user_func([$this,$computeMethodName],$varname,$setting,$rowno,$isreset);
+            if (!method_exists($this, $computeMethodName)) {
+                $msg = sprintf("Variable '%s' use calculation type '%s' which is not supported, '%s()' not found", $varname, $calculation, $computeMethodName);
+                if ($this->debugtxt) echo "\n" . $msg . "\n";
+            } else {
+                $computevalue = call_user_func([$this, $computeMethodName], $varname, $setting, $rowno, $isreset, $resetvalue);
                 $this->variables[$varname]['lastvalue'] = $this->variables[$varname]['value'];
-                $this->variables[$varname]['value']=$computevalue;
-            }                        
-        }        
+                $this->variables[$varname]['value'] = $computevalue;
+            }
+        }
     }
 
-    protected function getResetValue(string $varname, string $resettype,string $resetgroup,mixed $initialValueExpression)
+    protected function getResetValue(string $varname, string $resettype, string $resetgroup, mixed $initialValueExpression)
     {
         $data = null;
-        switch($resettype)
-        {
+        switch ($resettype) {
             case 'Report': //only reset during first initialization
                 $data = $initialValueExpression;
                 break;
             case 'Page':
+                // $data =
                 $data = $this->output->PageNo();
                 break;
             case 'Column':
@@ -96,13 +87,13 @@ trait PHPJasperXML_variables
             case 'None':
                 $data = null;
                 break;
-            case 'Master':                
+            case 'Master':
                 die('Variable "$varname" using resetType "Master", which is not support yet');
                 break;
         }
         return $data;
     }
-    
+
     /**
      * Design for variable using "No calculation function", this compute method process current row data, without aggregation (like sum, average)
      * @param string $varname variable name
@@ -111,11 +102,11 @@ trait PHPJasperXML_variables
      * @param bool $isreset
      * @return mixed $variablevalue
      */
-    protected function compute_None(string $varname,array $setting,int $rowno,bool $isreset = false): mixed
+    protected function compute_None(string $varname, array $setting, int $rowno, bool $isreset = false): mixed
     {
         $variablevalue = '';
         $variableExpression = $setting['variableExpression'];
-        $variablevalue = $this->executeExpression($variableExpression);        
+        $variablevalue = $this->executeExpression($variableExpression);
         return $variablevalue;
     }
 
@@ -127,12 +118,12 @@ trait PHPJasperXML_variables
      * @param bool $isreset
      * @return mixed $variablevalue
      */
-    protected function compute_System(string $varname,array $setting,int $rowno,bool $isreset = false): mixed
+    protected function compute_System(string $varname, array $setting, int $rowno, bool $isreset = false): mixed
     {
-        $variablevalue = $setting['variableExpression'];        
+        $variablevalue = $setting['variableExpression'];
         return $variablevalue;
     }
-    
+
 
     /**
      * Design for variable using "Sum", this compute method run aggregation according reset type
@@ -142,25 +133,27 @@ trait PHPJasperXML_variables
      * @param bool $isreset
      * @return mixed $variablevalue
      */
-    protected function compute_Sum(string $varname,array $setting, int $rowno, bool $isreset=false): mixed
-    {        
-        $prevvalue=$this->getVariableValue($varname) ?? 0;
-        $variableExpression = $setting['variableExpression'];
-        // print_r($setting);
-        // echo "<hr/>";
-        $newvalue = $this->executeExpression($variableExpression) ?? 0;
-        // $prevvalue = ($prevvalue == "''") ? 0 : $prevvalue;
-        // $newvalue = ($newvalue == "''") ? 0 : $newvalue;
-        // echo "\nvariableExpression = $variableExpression, prevvalue = $prevvalue, newvalue = $newvalue, isreset $isreset\n";
-        if($isreset)
-        {
-            $variablevalue=$newvalue;
+    protected function compute_Sum(string $varname, array $setting, int $rowno, bool $isreset = false, $resetvalue = '-'): mixed
+    {
+        $prevvalue = $this->getVariableValue($varname) ?? 0;
+
+        if (!isset($this->page_status[$varname])) {
+            $this->page_status[$varname] = 0;
         }
-        else
-        {
-            // echo "\$variablevalue=$prevvalue + $newvalue;";
-            $variablevalue=$prevvalue + $newvalue;
-        }        
+
+        $variableExpression = $setting['variableExpression'];
+
+        $newvalue = $this->executeExpression($variableExpression) ?? 0;
+        if (isset($resetvalue) && !str_contains($this->page_status[$varname], $resetvalue)) {
+            if ($setting['resetType']) {
+                $lastvalue = $setting['value'] - $setting['total_value'];
+            } else
+                $lastvalue = $setting['value'] - $setting['lastvalue'];
+            $this->page_status[$varname]  = $resetvalue;
+            $variablevalue = $lastvalue + $newvalue;
+        } else
+            $variablevalue = $prevvalue + $newvalue;
+
         return $variablevalue;
     }
 
@@ -172,15 +165,14 @@ trait PHPJasperXML_variables
      * @param bool $isreset
      * @return mixed $variablevalue
      */
-    protected function compute_First(string $varname,array $setting, int $rowno, bool $isreset=false): mixed
-    {        
-        $variablevalue=$this->getVariableValue($varname);
+    protected function compute_First(string $varname, array $setting, int $rowno, bool $isreset = false): mixed
+    {
+        $variablevalue = $this->getVariableValue($varname);
         $variableExpression = $setting['variableExpression'];
         $newvalue = $this->executeExpression($variableExpression);
         // echo "\nvariableExpression = $variableExpression, prevvalue = $prevvalue, newvalue = $newvalue, isreset $isreset\n";
-        if($isreset)
-        {
-            $variablevalue=$newvalue;
+        if ($isreset) {
+            $variablevalue = $newvalue;
         }
         return $variablevalue;
     }
@@ -192,27 +184,21 @@ trait PHPJasperXML_variables
      * @param bool $isreset
      * @return mixed $variablevalue
      */
-    protected function compute_Lowest(string $varname,array $setting, int $rowno, bool $isreset=false): mixed
-    {        
-        $prevvalue=$this->getVariableValue($varname);
+    protected function compute_Lowest(string $varname, array $setting, int $rowno, bool $isreset = false): mixed
+    {
+        $prevvalue = $this->getVariableValue($varname);
         $variableExpression = $setting['variableExpression'];
         $newvalue = $this->executeExpression($variableExpression);
         // echo "\nvariableExpression = $variableExpression, prevvalue = $prevvalue, newvalue = $newvalue, isreset $isreset\n";
-        if($isreset)
-        {
-            $variablevalue=$newvalue;
+        if ($isreset) {
+            $variablevalue = $newvalue;
+        } else {
+            if ($prevvalue > $newvalue) {
+                $variablevalue = $newvalue;
+            } else {
+                $variablevalue = $prevvalue;
+            }
         }
-        else
-        {
-            if($prevvalue >$newvalue)
-            {
-                $variablevalue=$newvalue;
-            }
-            else
-            {
-                $variablevalue=$prevvalue;
-            }
-        }        
         return $variablevalue;
     }
     /**
@@ -223,27 +209,21 @@ trait PHPJasperXML_variables
      * @param bool $isreset
      * @return mixed $variablevalue
      */
-    protected function compute_Highest(string $varname,array $setting, int $rowno, bool $isreset=false): mixed
-    {        
-        $prevvalue=$this->getVariableValue($varname);
+    protected function compute_Highest(string $varname, array $setting, int $rowno, bool $isreset = false): mixed
+    {
+        $prevvalue = $this->getVariableValue($varname);
         $variableExpression = $setting['variableExpression'];
         $newvalue = $this->executeExpression($variableExpression);
         // echo "\nvariableExpression = $variableExpression, prevvalue = $prevvalue, newvalue = $newvalue, isreset $isreset\n";
-        if($isreset)
-        {
-            $variablevalue=$newvalue;
+        if ($isreset) {
+            $variablevalue = $newvalue;
+        } else {
+            if ($prevvalue < $newvalue) {
+                $variablevalue = $newvalue;
+            } else {
+                $variablevalue = $prevvalue;
+            }
         }
-        else
-        {
-            if($prevvalue < $newvalue)
-            {
-                $variablevalue=$newvalue;
-            }
-            else
-            {
-                $variablevalue=$prevvalue;
-            }
-        }        
         return $variablevalue;
     }
 
@@ -255,32 +235,25 @@ trait PHPJasperXML_variables
      * @param bool $isreset
      * @return mixed $variablevalue
      */
-    protected function compute_Average(string $varname,array $setting, int $rowno, bool $isreset=false): mixed
-    {        
-        $prevvalue=$this->getVariableValue($varname);
+    protected function compute_Average(string $varname, array $setting, int $rowno, bool $isreset = false): mixed
+    {
+        $prevvalue = $this->getVariableValue($varname);
         $variableExpression = $setting['variableExpression'];
         $newvalue = $this->executeExpression($variableExpression);
         // echo "\nvariableExpression = $variableExpression, prevvalue = $prevvalue, newvalue = $newvalue, isreset $isreset\n";
         $this->variables[$varname]['compute_count'] = $this->variables[$varname]['compute_count'] ?? 0;
         $this->variables[$varname]['compute_sum'] = $this->variables[$varname]['compute_sum'] ?? 0;
-        
 
 
-        if($isreset)
-        {
-            $this->variables[$varname]['compute_count']=1;
-            $this->variables[$varname]['compute_sum']=$newvalue;
-            
-        }
-        else
-        {
+
+        if ($isreset) {
+            $this->variables[$varname]['compute_count'] = 1;
+            $this->variables[$varname]['compute_sum'] = $newvalue;
+        } else {
             $this->variables[$varname]['compute_count'] += 1;
             $this->variables[$varname]['compute_sum'] += $newvalue;
-            
-        }        
+        }
         $variablevalue = $this->variables[$varname]['compute_sum'] / $this->variables[$varname]['compute_count'];
         return $variablevalue;
     }
-
-
 }
