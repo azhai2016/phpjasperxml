@@ -714,7 +714,7 @@ class Pdf_driver extends TCPDF implements ExportInterface
             $allowscale = true;
         } else if ($textAdjust == 'ScaleFont') {
 
-            $maxheight = $h; //$limitY;
+           $maxheight = $h; //$limitY;
             $stretchtype = 2;
             $allowscale = false;
             $txt = trim(str_replace(' ', '', $finaltxt));
@@ -728,11 +728,11 @@ class Pdf_driver extends TCPDF implements ExportInterface
                 $target->setFontSize($target->getFontSize() - 4);
                 //$target->setCellHeightRatio($ratio + 0.5);
                 $width = $target->GetStringWidth($txt);
-
-                if ($width < $old_width) {
+                $ratio = (($w - $target->cell_padding['L'] - $target->cell_padding['R']) / $width);
+                if ($ratio > 1) {
                     $_th = $target->getStringHeight($w, $txt);
                     $_h = (($h - $_th) / 2);
-                    $target->setCellPaddings(0, $_h, 0, 0);
+                    $target->setCellPaddings(0, $_h-1, 0, 0);
                 }
             } //else  $target->font_stretching = $font_stretching;
         } else {
