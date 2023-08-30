@@ -713,14 +713,28 @@ class Pdf_driver extends TCPDF implements ExportInterface
             $maxheight = $limitY - $y; //         
             $allowscale = true;
         } else if ($textAdjust == 'ScaleFont') {
- 
-            $maxheight = $limitY;
+
+            $maxheight = $h; //$limitY;
             $stretchtype = 2;
             $allowscale = false;
-            if ($target->GetStringWidth(trim($finaltxt))>$w) {
-                $target->setFontSize($target->getFontSize()-4);
-            }  
-       
+            $txt = trim(str_replace(' ', '', $finaltxt));
+            $old_width = $target->GetStringWidth($txt);
+            $ratio = (($w - $target->cell_padding['L'] - $target->cell_padding['R']) / $old_width);
+            $font_stretching = $target->font_stretching;
+            if ($ratio < 1) {
+                //if ($ratio < 0.5) {
+                //    $target->setFontSize($target->getFontSize() * 0.7);
+                //} else
+                $target->setFontSize($target->getFontSize() - 4);
+                //$target->setCellHeightRatio($ratio + 0.5);
+                $width = $target->GetStringWidth($txt);
+
+                if ($width < $old_width) {
+                    $_th = $target->getStringHeight($w, $txt);
+                    $_h = (($h - $_th) / 2);
+                    $target->setCellPaddings(0, $_h, 0, 0);
+                }
+            } //else  $target->font_stretching = $font_stretching;
         } else {
             $maxheight = $h;
             $stretchtype = 0;
@@ -741,7 +755,7 @@ class Pdf_driver extends TCPDF implements ExportInterface
         } else {
             $estimateHeight = $h;
         }
-     
+
         //  $newY= $y+$estimateHeight;
         $target->MultiCell($w, $h, $finaltxt, $border, $halign, $fill, 0, $x, $y, true, $stretchtype, $ishtml, true, $maxheight, $valign);
         if ($textAdjust != 'StretchHeight' || $ishtml) {
