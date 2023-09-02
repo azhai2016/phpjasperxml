@@ -120,6 +120,10 @@ trait PHPJasperXML_outputhorizontal{
             }
         }   
         $currentEndY= $this->output->getLastBandEndY();
+        if ($this->isgroupchanged){
+            $this->maxDetailEndY =  $currentEndY;
+        }
+        else 
         if($currentEndY > $this->maxDetailEndY)
         {
             $this->maxDetailEndY =  $currentEndY;
